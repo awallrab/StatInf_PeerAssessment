@@ -1,0 +1,73 @@
+---
+title: "Statistical Inference Part1"
+author: "Armin Wallrab"
+date: "24. Mai 2015"
+output: html_document
+---
+ 
+# Statistical Inference 
+## Part 1: Simulation
+
+In this project I will investigate the exponential distribution in R and compare it with the Central Limit Theorem. The exponential distribution can be simulated in R with rexp(n, lambda) where lambda is the rate parameter. The mean of exponential distribution is 1/lambda and the standard deviation is also 1/lambda. I set lambda = 0.2 for all of the simulations. I'll investigate the distribution of averages of 40 exponentials with a thousand simulations.
+
+```{r}
+library(ggplot2)
+set.seed(123)
+lambda <- 0.2
+n <- 40
+runs <- 1000
+sim <- matrix(rexp(runs*n, rate=lambda), runs)
+sim_means <- rowMeans(sim)
+```
+
+### 1. Show the sample mean and compare it to the theoretical mean of the distribution
+
+```{r}
+# mean of the simulation and the distribution
+c(mean(sim_means), 1/lambda)
+```
+
+The simulated and theoretical mean values are very close, as expected by the Central Limit Theorem. The distributions are centered around the same values.
+
+### 2. Show how variable the sample is (via variance) and compare it to the theoretical variance of the distribution
+
+```{r}
+# compare the variances
+sim_var <- var(sim_means)
+the_var <- 1/lambda**2/n
+c(sim_var, the_var)
+```
+
+The simulated and theoretical variances are also very close.
+
+### 3. Show that the distribution is approximately normal
+According to the CLT the distribution of the simulated means should be approximately normal. To illustrate this I'll normalize the vectors and compare it to a standard distribution.
+ 
+```{r}
+library(ggplot2)
+hist(sim_means, breaks=40, probability=TRUE, main="Distribution of Simulation", xlab="")
+lines(density(sim_means), col="green")
+abline(v=1/lambda, col="red")
+xfit <- seq(min(sim_means), max(sim_means), length=100)
+yfit <- dnorm(xfit, mean=1/lambda, sd=(1/lambda/sqrt(n)))
+lines(xfit, yfit, pch=22, col="red")
+# add a legend
+legend('topright', c("Simulated", "Theoretical"), col=c("green", "red"), lty=c(1,1))
+```
+
+Also the q-q plot for quantiles shows that the distribution is normal:
+
+```{r}
+qqnorm(sim_means, col="green")
+qqline(sim_means, col="red")
+```
+
+Last but not least, to verify I'll also try to match the confidence intervals which are calculated below:
+
+```{r}
+sim_ci <- mean(sim_means) + c(-1,1)*1.96*sd(sim_means)/sqrt(n)
+the_ci <- 1/lambda + c(-1,1)*1.96*sqrt(the_var)/sqrt(n);
+c(sim_ci, the_ci)
+```
+
+This shows that the distribution is normal as expected with the CLT.

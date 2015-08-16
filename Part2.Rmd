@@ -1,0 +1,128 @@
+---
+title: "Statistical Inference Part 2"
+author: "Armin Wallrab"
+date: "24. Mai 2015"
+output: html_document
+---
+ 
+# Statistical Inference 
+## Part 2: Analysis of the ToothGrowth data
+
+The ToothGrowth data set documents the effect of Vitamin C on tooth growth in guinea pigs.
+
+Source
+C. I. Bliss (1952) The Statistics of Bioassay. Academic Press.
+
+### 1. Load the ToothGrowth data and perform some basic exploratory data analyses
+```{r}
+library(datasets)
+library(ggplot2)
+
+data(ToothGrowth)
+t <-ToothGrowth
+t$dose <- as.factor(t$dose)
+
+coplot(len ~ dose | supp, data = t, panel = panel.smooth, xlab="ToothGrowth data: length vs dose, given type of supplement")
+```
+
+The figure seems to show that dose has a direct influence on tooth growth. Orange juice (OJ) in lower doses also seems to have more effect than ascorbic acid (VC).
+
+Let's examine this in the sections below. 
+
+### 2. Provide a basic summary of the data
+According to the help page, the data contains the length of odontoblasts (teeth) in each of 10 guinea pigs at each of three dose levels of Vitamin C (0.5, 1, and 2 mg) with each of two delivery methods (orange juice or ascorbic acid).
+
+The data frame has 60 observations on 3 variables
+
+- [,1]  len  numeric	Tooth length
+- [,2]	supp	factor	Supplement type (VC or OJ).
+- [,3]	dose	numeric	Dose in milligrams.
+
+```{r}
+summary(t)
+str(t)
+head(t)
+```
+
+### 3. Use confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose
+At first sight the distributions of tooth length by delivery method and dose levels, seem to indicate that for 0.5 and 1 mg, the mean tooth length is greater for those treated with orange juice. For the 2 mg dose the mean increase seems to be independent of the type of dose. 
+
+Let's verify with confidence interval testing.
+
+I'll subset appropriately and utilize t.test() to determine each scenarios confidence interval, subset means, and p-value.
+
+#### Supplement only
+```{r}
+s1 <- subset(t, supp=="VC")$len
+s2 <- subset(t, supp=="OJ")$len
+d <- t.test(s1, s2, paired=FALSE, var.equal=FALSE)
+d$p.value
+d$conf.int[1:2]
+```
+
+The p-value is 0.06 and the confidence interval contains 0. I don't reject the null hypothesis, i.e. type of supplement alone does not affect tooth growth.
+
+#### Dose only
+```{r}
+s1 <- subset(t, dose=="0.5")$len
+s2 <- subset(t, dose=="1")$len
+d <- t.test(s1, s2, paired=FALSE, var.equal=FALSE)
+d$conf.int[1:2]
+```
+
+If I increase dose from 0.5 to 1.0 milligrams, the confidence interval doesn't contain 0. I can reject the null hypothesis that this increase doesn't increase tooth length.
+
+```{r}
+s1 <- subset(t, dose=="1")$len
+s2 <- subset(t, dose=="2")$len
+d <- t.test(s1, s2, paired=FALSE, var.equal=FALSE)
+d$conf.int[1:2]
+```
+
+Similar result for increase from 1.0 to 2.0.
+
+I.e. an increased dose definitely leads to an increased length.
+
+#### Supplement by dose
+```{r}
+s1 <- subset(t, supp=="VC" & dose=="0.5")$len
+s2 <- subset(t, supp=="OJ" & dose=="0.5")$len
+d <- t.test(s1, s2, paired=FALSE, var.equal=FALSE)
+d$conf.int[1:2]
+```
+
+The confidence interval doens't contain 0, thus I reject the null hypothesis that supplement type with a 0.5 dose doesn't affect tooth growth.
+
+```{r}
+s1 <- subset(t, supp=="VC" & dose=="1")$len
+s2 <- subset(t, supp=="OJ" & dose=="1")$len
+d <- t.test(s1, s2, paired=FALSE, var.equal=FALSE)
+d$conf.int[1:2]
+```
+
+Same result fro 1.0 dose.
+
+```{r}
+s1 <- subset(t, supp=="VC" & dose=="2")$len
+s2 <- subset(t, supp=="OJ" & dose=="2")$len
+d <- t.test(s1, s2, paired=FALSE, var.equal=FALSE)
+d$p.value
+d$conf.int[1:2]
+```
+
+The confidence interval contains 0 and the p-value is close to 1.0. Thus I don't reject the null hypothesis that supplement type with a 2.0 dose doesn't affect tooth growth.
+
+I.e. I can't conclude which supplement has a bigger affect on tooth growth for 2.0.
+
+### 4. State your conclusions and the assumptions needed for your conclusions
+Conclusions
+
+- With increase in dose, the tooth length increases as well
+- Independent of dose size, supplement type alone doesn't affect tooth growth
+- Orange Juice has more effect then Ascorbic Acid with a 0.5 and 1.0 dose size
+- There's no difference between Orange Juice and Ascorbic Acid for 2.0 doses
+
+The following assumptions were made:
+
+- The samples are independent
+- The distribution is normal
